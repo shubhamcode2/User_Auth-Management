@@ -1,5 +1,5 @@
-import mongoose, { SchemaType } from "mongoose";
-import bcrypt from "bcryptjs";
+import mongoose, { Schema } from "mongoose";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
@@ -35,10 +35,12 @@ const userSchema = new mongoose.Schema(
         coverImage: {
             type: String,
         },
-        watchHistory: [{
-            type: Schema.Types.ObjectId,
-            ref: "Video"
-        }],
+        watchHistory: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Video"
+            }
+        ],
         password: {
             type: String,
             required: [true, "Password is required"],
@@ -56,7 +58,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next()
-    this.password = bcrypt.hash(this.password, 8)
+    this.password = await bcrypt.hash(this.password, 8)
     next()
 })
 
