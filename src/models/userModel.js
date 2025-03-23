@@ -83,6 +83,8 @@ userSchema.methods.generateAccessToken = function () {
     )
 }
 
+const key = process.env.CLOUDINARY_API_KEY;
+console.log("key wlwlw", key);
 
 userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(

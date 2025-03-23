@@ -7,36 +7,37 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
 
-    // destructuring 
+   
+    
     const { userName, email, fullName, password } = req.body;
-    console.log("req.body", req.body);
-    //varifying the fields
+
     if ([userName, email, fullName, password].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     };
 
-    // checking if the user already exists
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ userName }, { email }]
     })
     if (existedUser) {
         throw new ApiError(409, " user with email or username already exists ")
     }
-    // uploading the files
-    const avatarLocalPath = req.file?.avatar[0]?.path
-    // const avatarLocalPath = req.files?.avatar?.[0]?.path; //changes file to files beause of chatgpt says
-    const coverImageLocalPath = req.file?.coverImage[0]?.path;
 
+    const avatarLocalPath = req.files?.avatar[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    console.log(avatarLocalPath);
     if (!avatarLocalPath) {
-        throw new ApiError(400, "avatar file is required")
+        throw new ApiError(400, "avatarlocalpath file is required")
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    if (!avatar) {
-        throw new ApiError(400, "avatar file is required")
+    if (!avatar || !coverImage) {
+        throw new ApiError(500, "Error uploading files to cloudinary")
     }
+   
+    console.log("user====================");
 
     const user = await User.create({
         fullName,
@@ -47,6 +48,11 @@ const registerUser = asyncHandler(async (req, res) => {
         userName: userName.toLowerCase(),
     })
 
+    if (!user) {
+        throw new ApiError(500, "user not created - internal server error something went wrong")
+    }
+
+    
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
     if (!createdUser) {
