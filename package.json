@@ -1,16 +1,8 @@
 {
   "name": "yt_clone_backend",
   "version": "1.0.0",
-  "description": "this is a backend project of youtube like video plateform going to make it a complex project with the help of chai aur code's backend playlist going to write most of the code with my mind and my understanding not going to fully copy the project.",
-  "keywords": [
-    "youtube",
-    "clone",
-    "chai",
-    "aur",
-    "backend",
-    "nodejs",
-    "express"
-  ],
+  "description": "",
+  "keywords": [],
   "license": "ISC",
   "author": "Shubham singh",
   "type": "module",

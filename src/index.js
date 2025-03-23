@@ -17,7 +17,7 @@ app.use(cookieParser());
 
 //db connection
 ConnectDB()
-    .then(() => app.listen(process.env.PORT, () => console.log(`Example app listening on port ${process.env.PORT}!`)))
+    .then(() => app.listen(process.env.PORT || 5000, () => console.log(`Example app listening on port ${process.env.PORT}!`)))
     .catch((err) => console.log("error in connecting db in index.js", err));
 
 
