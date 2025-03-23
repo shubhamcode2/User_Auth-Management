@@ -7,8 +7,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
 
-   
-    
     const { userName, email, fullName, password } = req.body;
 
     if ([userName, email, fullName, password].some((field) => field?.trim() === "")) {
@@ -21,6 +19,11 @@ const registerUser = asyncHandler(async (req, res) => {
     if (existedUser) {
         throw new ApiError(409, " user with email or username already exists ")
     }
+
+    // console.log(req.files);
+    // console.log(req.body);
+
+
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
     const coverImageLocalPath = req.files?.coverImage[0]?.path;
@@ -36,8 +39,8 @@ const registerUser = asyncHandler(async (req, res) => {
     if (!avatar || !coverImage) {
         throw new ApiError(500, "Error uploading files to cloudinary")
     }
-   
-    console.log("user====================");
+
+    console.log("====================================");
 
     const user = await User.create({
         fullName,
@@ -45,25 +48,20 @@ const registerUser = asyncHandler(async (req, res) => {
         coverImage: coverImage?.url || "",
         email,
         password,
-        userName: userName.toLowerCase(),
+        userName
     })
 
-    if (!user) {
-        throw new ApiError(500, "user not created - internal server error something went wrong")
-    }
-
-    
-    const createdUser = await User.findById(user._id).select("-password -refreshToken")
+    const createdUser = await User.findById(user._id).select(
+        "-password -refreshToken"
+    )
 
     if (!createdUser) {
-        throw new ApiError(500, "user not created - internal server error something went wrong")
+        throw new ApiError(500, "Something went wrong while registering the user")
     }
 
-
-    return res.status(201).json(new ApiResponse(201, createdUser, "user created successfully"))
-
-
-
+    return res.status(201).json(
+        new ApiResponse(200, createdUser, "User registered Successfully")
+    )
 
 })
 
