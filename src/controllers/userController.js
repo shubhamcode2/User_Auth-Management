@@ -92,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { email, userName, password } = req.body;
 
-    if ([email, userName, password].some((field) => field?.trim() === "")) {
+    if ([email, userName].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     };
 
@@ -123,13 +123,24 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const options = { httpOnly: true, secure: true }
 
+    // return res
+    //     .cookie("accessToken", accessToken, options)
+    //     .cookie("refreshToken", refreshToken, options)
+    //     .json(
+    //         new ApiResponse(200, loggedInUser, accessToken, refreshToken),
+    //         "User logged in Successfully"
+    //     )
+
+
     return res
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
-        .json(
-            new ApiResponse(200, loggedInUser, accessToken, refreshToken),
-            "User logged in Successfully"
-        )
+        .status(200)
+        .json({
+            message: "User logged in Successfully",
+            data: new ApiResponse(200, loggedInUser, accessToken, refreshToken),
+        });
+
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -149,6 +160,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "User logged out Successfully"))
 
 })
+
 
 export {
     registerUser,
