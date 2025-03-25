@@ -25,6 +25,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
         throw new ApiError(500, "Failed to generate tokens", error)
 
     }
+    i
 
 }
 
@@ -117,6 +118,9 @@ const loginUser = asyncHandler(async (req, res) => {
     // user.refreshToken = refreshToken;
     // await user.save({ validateBeforeSave: false });
 
+    // console.log("refresh token", refreshToken);
+
+
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
@@ -133,18 +137,23 @@ const loginUser = asyncHandler(async (req, res) => {
 
 
     return res
+        .status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
-        .status(200)
-        .json({
-            message: "User logged in Successfully",
-            data: new ApiResponse(200, loggedInUser, accessToken, refreshToken),
-        });
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser, accessToken, refreshToken
+                },
+                "User logged In Successfully"
+            )
+        )
+
 
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
-
 
     User.findByIdAndUpdate(
         req.user._id,
@@ -161,9 +170,61 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 })
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(400, "incoming refresh token is required -- unauthorized req")
+    }
+    
+    try {
+
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+
+        if (!decodedToken) {
+            throw new ApiError(401, "decoded token is required -- unauthorized req")
+        }
+
+        const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+
+        if (!user) {
+            throw new ApiError(401, "user is required  invlaid refresh token -- unauthorized req")
+        }
+
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "refresh token didnt match -- unauthorized req")
+        }
+
+        const options = { httpOnly: true, secure: true }
+        const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        accessToken,
+                        refreshToken: newRefreshToken
+                    },
+                    "Access token refreshed Successfully"
+                )
+            )
+    } catch (error) {
+
+        throw new ApiError(401, "refresh token k kuchh smasya h ho function controller me", error)
+
+    }
+
+})
 
 export {
     registerUser,
     loginUser,
     logoutUser,
+    refreshAccessToken,
 }
