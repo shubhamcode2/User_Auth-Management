@@ -3,7 +3,7 @@ import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/userModel.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -177,13 +177,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (!incomingRefreshToken) {
         throw new ApiError(400, "incoming refresh token is required -- unauthorized req")
     }
-    
+
     try {
 
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
 
         if (!decodedToken) {
-            throw new ApiError(401, "decoded token is required -- unauthorized req")
+            throw new ApiError(401, "refresh token is not verified -- unauthorized req")
         }
 
         const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
@@ -221,6 +221,59 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
 })
+
+
+// const refreshAccessToken = asyncHandler(async (req, res) => {
+//     try {
+//         // 1️⃣ Get refresh token from cookies or body
+//         const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+//         if (!incomingRefreshToken) {
+//             throw new ApiError(400, "Refresh token is required – Unauthorized request");
+//         }
+
+//         // 2️⃣ Verify Refresh Token
+//         let decodedToken;
+//         try {
+//             decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+//         } catch (error) {
+//             throw new ApiError(401, "Invalid or expired refresh token – Unauthorized request");
+//         }
+
+//         // 3️⃣ Find User (Without password & refreshToken)
+//         const user = await User.findById(decodedToken?._id).select("-password -refreshToken");
+
+//         if (!user) {
+//             throw new ApiError(401, "User not found – Invalid refresh token");
+//         }
+
+//         // 4️⃣ Check If Refresh Token Matches the One in Database
+//         if (incomingRefreshToken !== user.refreshToken) {
+//             throw new ApiError(401, "Refresh token mismatch – Unauthorized request");
+//         }
+
+//         // 5️⃣ Generate New Tokens
+//         const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+//         // 6️⃣ Store the New Refresh Token in Database
+//         user.refreshToken = newRefreshToken;
+//         await user.save();
+
+//         // 7️⃣ Set Cookies & Send Response
+//         const options = { httpOnly: true, secure: true, sameSite: "Strict" };
+
+//         return res
+//             .status(200)
+//             .cookie("accessToken", accessToken, options)
+//             .cookie("refreshToken", newRefreshToken, options)
+//             .json(
+//                 new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Access token refreshed successfully")
+//             );
+//     } catch (error) {
+//         throw new ApiError(401, "Error refreshing access token", error);
+//     }
+// });
+
 
 export {
     registerUser,
