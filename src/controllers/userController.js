@@ -272,7 +272,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 //     }
 // });
 
-
 const changeCurrentUserPassword = asyncHandler(async (req, res) => {
     try {
 
@@ -332,8 +331,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
     const avatarLocalPath = req.file?.path;
-
-
+    //delete the previous avatar from cloudinary:TODO
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required");
     }
@@ -382,6 +380,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
     return res.json(new ApiResponse(200, user, "User coverImage updated successfully"));
 })
+
+
 
 
 export {
