@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginUser, logoutUser, refreshAccessToken, registerUser } from "../controllers/userController.js";
+import { changeCurrentUserPassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, registerUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage } from "../controllers/userController.js";
 import { upload } from "../middlewares/multerMiddleware.js";
 import { verifyJWT } from "../middlewares/authMiddleware.js";
 
@@ -13,10 +13,15 @@ router.route("/register").post(
     registerUser);
 
 router.route("/login").post(loginUser)
+router.route("/refreshAccessToken").post(refreshAccessToken)
 
 //secured routes
 router.route("/logout").post(verifyJWT, logoutUser)
-router.route("/refresh-token").post( refreshAccessToken)
+router.route("/getCurrentUser").get(verifyJWT, getCurrentUser)
+router.route("/changeCurrentUserPassword").patch(verifyJWT, changeCurrentUserPassword) //not givin params cause for current user only
+router.route("/updateAccountDetails").put(verifyJWT, updateAccountDetails)
+router.route("/updateUserAvatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
+router.route("/updateUserCoverImage").patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
 
 
 

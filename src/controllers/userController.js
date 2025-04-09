@@ -114,27 +114,11 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
-    // // Update the refresh token in the database
-    // user.refreshToken = refreshToken;
-    // await user.save({ validateBeforeSave: false });
-
-    // console.log("refresh token", refreshToken);
-
-
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
 
     const options = { httpOnly: true, secure: true }
-
-    // return res
-    //     .cookie("accessToken", accessToken, options)
-    //     .cookie("refreshToken", refreshToken, options)
-    //     .json(
-    //         new ApiResponse(200, loggedInUser, accessToken, refreshToken),
-    //         "User logged in Successfully"
-    //     )
-
 
     return res
         .status(200)
@@ -144,7 +128,7 @@ const loginUser = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 {
-                    user: loggedInUser, accessToken, refreshToken
+                    user: loggedInUser,
                 },
                 "User logged In Successfully"
             )
@@ -170,13 +154,17 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 })
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
+const refreshAccessToken = asyncHandler(async (req, res, next) => {
 
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
     if (!incomingRefreshToken) {
         throw new ApiError(400, "incoming refresh token is required -- unauthorized req")
     }
+
+    // console.log("incomingRefreshToken", incomingRefreshToken);
+    // console.log("req.cookies", req.cookies);
+
 
     try {
 
@@ -186,7 +174,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(401, "refresh token is not verified -- unauthorized req")
         }
 
-        const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+        const user = await User.findById(decodedToken?._id).select("-password")
 
         if (!user) {
             throw new ApiError(401, "user is required  invlaid refresh token -- unauthorized req")
@@ -197,83 +185,37 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         }
 
         const options = { httpOnly: true, secure: true }
-        const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+        // console.log("newRefreshToken", refreshToken);
+        // console.log("accessToken", accessToken);
 
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
+            .cookie("refreshToken", refreshToken, options)
             .json(
                 new ApiResponse(
                     200,
                     {
                         accessToken,
-                        refreshToken: newRefreshToken
+                        refreshToken,
                     },
                     "Access token refreshed Successfully"
                 )
             )
     } catch (error) {
 
-        throw new ApiError(401, "refresh token k kuchh smasya h ho function controller me", error)
+        throw new ApiError(401, error)
+        // next(error)
 
     }
 
 })
 
-// const refreshAccessToken = asyncHandler(async (req, res) => {
-//     try {
-//         // 1️⃣ Get refresh token from cookies or body
-//         const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
-//         if (!incomingRefreshToken) {
-//             throw new ApiError(400, "Refresh token is required – Unauthorized request");
-//         }
-
-//         // 2️⃣ Verify Refresh Token
-//         let decodedToken;
-//         try {
-//             decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-//         } catch (error) {
-//             throw new ApiError(401, "Invalid or expired refresh token – Unauthorized request");
-//         }
-
-//         // 3️⃣ Find User (Without password & refreshToken)
-//         const user = await User.findById(decodedToken?._id).select("-password -refreshToken");
-
-//         if (!user) {
-//             throw new ApiError(401, "User not found – Invalid refresh token");
-//         }
-
-//         // 4️⃣ Check If Refresh Token Matches the One in Database
-//         if (incomingRefreshToken !== user.refreshToken) {
-//             throw new ApiError(401, "Refresh token mismatch – Unauthorized request");
-//         }
-
-//         // 5️⃣ Generate New Tokens
-//         const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
-
-//         // 6️⃣ Store the New Refresh Token in Database
-//         user.refreshToken = newRefreshToken;
-//         await user.save();
-
-//         // 7️⃣ Set Cookies & Send Response
-//         const options = { httpOnly: true, secure: true, sameSite: "Strict" };
-
-//         return res
-//             .status(200)
-//             .cookie("accessToken", accessToken, options)
-//             .cookie("refreshToken", newRefreshToken, options)
-//             .json(
-//                 new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Access token refreshed successfully")
-//             );
-//     } catch (error) {
-//         throw new ApiError(401, "Error refreshing access token", error);
-//     }
-// });
-
-const changeCurrentUserPassword = asyncHandler(async (req, res) => {
+const changeCurrentUserPassword = asyncHandler(async (req, res, next) => {
     try {
 
         const { currentPassword, newPassword } = req.body;
@@ -297,8 +239,8 @@ const changeCurrentUserPassword = asyncHandler(async (req, res) => {
 
 
     } catch (error) {
-        throw new ApiError(400, "Error changing password",
-            error)
+        // throw new ApiError(400, error)/
+        next(error)
     }
 })
 
